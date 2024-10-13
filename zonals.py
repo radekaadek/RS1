@@ -7,13 +7,9 @@ file = "zonal_statistics.csv"
 # Load the CSV file
 df = pd.read_csv(file)
 
-prefixes = ['_', '3', '4', '5']
+pref2name = {'_': 'IR_2015', '3': 'IR_2023', '4': 'R_2015', '5': 'R_2023'}
 
-# _ = 111
-# 3 = nic
-# 
-
-for prefix in prefixes:
+for prefix, name in pref2name.items():
     mean_name = prefix + 'mean'
     stdev_name = prefix + 'stdev'
     min_name = prefix + 'min'
@@ -45,7 +41,9 @@ for prefix in prefixes:
     ax.bxp(boxplot_data_list, showfliers=False)
 
 # Set the title
-    ax.set_title('Boxplot')
+    ax.set_title(f"Wykres wartości zonal dla {name}")
+    ax.set_xlabel("Numer drogi")
+    ax.set_ylabel("Wartośći pikseli")
 
 # Show the plot
     plt.savefig(f"zonal_{prefix}.png")
