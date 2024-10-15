@@ -1,0 +1,17 @@
+name: teledetekcja
+channels:
+  - conda-forge
+  - anaconda
+  - defaults
+dependencies:
+  - python=3.12.*
+  - numpy
+  - gdal
+  - matplotlib
+  - geopandas
+  - pandas
+  - rasterio
+  - opencv
+  - jupyterlab
+  - poppler
+
