@@ -129,7 +129,7 @@ print("Liczba komórek NoData:", np.sum(array == band.GetNoDataValue()))
 # In[6]:
 
 
-get_ipython().run_line_magic('matplotlib', 'qt')
+# get_ipython().run_line_magic('matplotlib', 'qt')
 import matplotlib.pyplot as plt
 
 def show_grayscale_matplotlib(array: np.ndarray):  
