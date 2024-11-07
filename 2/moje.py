@@ -31,12 +31,19 @@ nvdi[(nvdim == 0) | np.isnan(nvdim)] = 0
 
 # scale to 0-1 floats 
 nvdi = (nvdi - nvdi.min()) / (nvdi.max() - nvdi.min())
+gdvi = (gdvi - gdvi.min()) / (gdvi.max() - gdvi.min())
 nvdi[(nvdim == 0) | np.isnan(nvdim)] = 0
 
+nvdi = np.multiply(nvdi, 255)
+nvdi = np.round(nvdi).astype(np.uint8)
+gdvi = np.multiply(gdvi, 255)
+nvdi = np.round(nvdi).astype(np.uint8)
+
+
 profile.update(
-    dtype=rasterio.float32
+    dtype=rasterio.uint8
 )
-with rasterio.open("NVDI.tif", "w", **profile) as save:
+with rasterio.open("NDVI.tif", "w", **profile) as save:
     save.write(nvdi, 1)
 
 with rasterio.open("GDVI.tif", "w", **profile) as save:
