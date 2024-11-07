@@ -7,7 +7,7 @@ file = "zonal_statistics.csv"
 # Load the CSV file
 df = pd.read_csv(file)
 
-pref2name = {'_': 'IR_2015', '3': 'IR_2023', '4': 'R_2015', '5': 'R_2023', 'ndvi': 'NDVI_2023', 'gdvi': 'GDVI_2023'}
+pref2name = {'_': 'IR_2015', '3': 'IR_2023', '4': 'R_2015', '5': 'R_2023', 'ndvi': 'NDVI_2023', 'gdvi': 'GDVI_2023', 'ndvi5': 'NDVI_2015'}
 
 for prefix, name in pref2name.items():
     mean_name = prefix + 'mean'
