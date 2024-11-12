@@ -30,6 +30,7 @@ def calculate_indices(band1, bandr, bandg=None):
     return ndvi, gdvi
 
 def save_raster(file_path, profile, data):
+    profile.update(count=len(data))
     with rasterio.open(file_path, "w", **profile) as save:
         for i, band in enumerate(data, start=1):
             save.write(band, i)
