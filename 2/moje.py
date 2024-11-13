@@ -19,15 +19,18 @@ def calculate_indices(band1, bandr, bandg=None):
     ndvi = np.multiply(ndvi, 255)
     ndvi = np.round(ndvi).astype(np.uint8)
     
-    gdvi = None
+    ngrdi = None
     if bandg is not None:
         bandg = bandg.astype(np.float32).copy()
-        gdvi = band1 - bandg
-        gdvi = (gdvi - gdvi.min()) / (gdvi.max() - gdvi.min())
-        gdvi = np.multiply(gdvi, 255)
-        gdvi = np.round(gdvi).astype(np.uint8)
+        ngrdil = np.array(bandg - bandr)
+        ngrdim = np.array(bandg + bandr)
+        ngrdi = ngrdil / ngrdim
+        ngrdi[(ngrdim == 0) | np.isnan(ngrdim)] = 0
+        ngrdi = (ngrdi - ngrdi.min()) / (ngrdi.max() - ngrdi.min())
+        ngrdi = np.multiply(ngrdi, 255)
+        ngrdi = np.round(ngrdi).astype(np.uint8)
     
-    return ndvi, gdvi
+    return ndvi, ngrdi
 
 def save_raster(file_path, profile, data):
     profile.update(count=len(data))
@@ -42,18 +45,18 @@ _, [band1_2015] = load_raster("/home/ard/prg/RS1/1/IR_2015/N-34-C-c-3-3.tif", [1
 _, [bandr_2015] = load_raster("/home/ard/prg/RS1/1/R_2015/N-34-C-c-3-3.tif", [1])
 
 # Calculate indices
-ndvi_2023, gdvi_2023 = calculate_indices(band1_2023, bandr_2023, bandg_2023)
-ndvi_2015, gdvi_2015 = calculate_indices(band1_2015, bandr_2015)
+ndvi_2023, ngrdi_2023 = calculate_indices(band1_2023, bandr_2023, bandg_2023)
+ndvi_2015, ngrdi_2015 = calculate_indices(band1_2015, bandr_2015)
 
-# Save NDVI and GDVI
+# Save NDVI and ngrdi
 profile_2023.update(dtype=rasterio.uint8)
 save_raster("NDVI_2023.tif", profile_2023, [ndvi_2023])
-save_raster("GDVI_2023.tif", profile_2023, [gdvi_2023])
+save_raster("ngrdi_2023.tif", profile_2023, [ngrdi_2023])
 
 profile_2015 = profile_2023.copy()
 save_raster("NDVI_2015.tif", profile_2015, [ndvi_2015])
-if gdvi_2015 is not None:
-    save_raster("GDVI_2015.tif", profile_2015, [gdvi_2015])
+if ngrdi_2015 is not None:
+    save_raster("ngrdi_2015.tif", profile_2015, [ngrdi_2015])
 
 # Save a new raster with 4 bands for 2023
 profile_2023.update(
