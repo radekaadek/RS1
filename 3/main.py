@@ -55,7 +55,6 @@ with open('drogi.txt', 'r') as f:
         road_bands[band_number - 1].append(float(line.split()[-1]))
 road_bands = np.array(road_bands)
 means = np.array([np.mean(b) for b in road_bands])
-print("here")
 # calculate the difference to the mean
 print(np.shape(bands[0]), np.shape(means))
 # diffs = np.array([np.abs(band - mean) for band, mean in zip(bands, means)])
@@ -72,10 +71,14 @@ new_diffs[diffs_norm <= threshold] = 1/2
 
 not_zero = (nir + red) != 0
 
-nvdi = np.divide((nir - red), (nir + red), out=np.zeros_like(nir-red), where=not_zero)
-print(nvdi)
+ndvi = np.divide((nir - red), (nir + red), out=np.zeros_like(nir-red), where=not_zero)
 # minmax scale
-nvdi = normalize(nvdi)
+ndvi = normalize(ndvi)
+
+# set ndvi > 0.8 to 1
+ndvi_filtered = ndvi.copy()
+ndvi_filtered[ndvi > 0.8] = 1
+ndvi_filtered[ndvi <= 0.8] = 0
 
 
 # minmax normalize
@@ -91,10 +94,16 @@ with rasterio.open('diffs.tif', 'w', **profile) as dst:
     profile.update(nodata=np.nan)
     dst.write(diffs_norm, 1)
 
-with rasterio.open('nvdi.tif', 'w', **profile) as dst:
+with rasterio.open('ndvi.tif', 'w', **profile) as dst:
     profile.update(count=1)
     profile.update(dtype=rasterio.float32)
     profile.update(nodata=np.nan)
-    dst.write(nvdi, 1)
+    dst.write(ndvi, 1)
+
+with rasterio.open('ndvi_filtered.tif', 'w', **profile) as dst:
+    profile.update(count=1)
+    profile.update(dtype=rasterio.float32)
+    profile.update(nodata=np.nan)
+    dst.write(ndvi_filtered, 1)
 
 
