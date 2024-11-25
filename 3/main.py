@@ -66,14 +66,19 @@ diffs_norm = normalize(diffs)
 # set larger than 0.04 to 1
 new_diffs = np.zeros_like(diffs_norm, dtype=np.float32)
 threshold = 0.035
-new_diffs[diffs_norm > 0.035] = 1
+new_diffs[diffs_norm > threshold] = 1
 # set smaller than 0.04 to 0
-new_diffs[diffs_norm <= 0.035] = 1/2
+new_diffs[diffs_norm <= threshold] = 1/2
 
+not_zero = (nir + red) != 0
+
+nvdi = np.divide((nir - red), (nir + red), out=np.zeros_like(nir-red), where=not_zero)
+print(nvdi)
+# minmax scale
+nvdi = normalize(nvdi)
 
 
 # minmax normalize
-print("here2")
 with rasterio.open('idx.tif', 'w', **profile) as dst:
     profile.update(count=1)
     profile.update(dtype=rasterio.float32)
@@ -85,5 +90,11 @@ with rasterio.open('diffs.tif', 'w', **profile) as dst:
     profile.update(dtype=rasterio.float32)
     profile.update(nodata=np.nan)
     dst.write(diffs_norm, 1)
+
+with rasterio.open('nvdi.tif', 'w', **profile) as dst:
+    profile.update(count=1)
+    profile.update(dtype=rasterio.float32)
+    profile.update(nodata=np.nan)
+    dst.write(nvdi, 1)
 
 
