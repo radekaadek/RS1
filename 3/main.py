@@ -7,7 +7,6 @@ def normalize(band):
 
 with rasterio.open('grupa_6.tif') as src:
     profile = src.profile
-    print(profile)
     bands = [src.read(band) for band in range(1, profile['count'] + 1)]
 
 for i in range(len(bands)):
@@ -35,14 +34,15 @@ nir = bands[7]
 # baei = (red + 0.3 ) / (green + nir)
 # baei[(baei == 0) | np.isnan(baei) | np.isinf(baei)] = 0
 # baei = normalize(baei)
-# # set >0.25 to 1 else 0
-# baei[baei >= 0.25] = 1
-# baei[baei < 0.25] = 0
 # np.savetxt('baei.txt', baei, fmt='%.2f')
 
+# load from baei.tif
+with rasterio.open('baei.tif') as src:
+    baei = src.read(1)
+
 profile.update(count=1)
-# with rasterio.open('baei.tif', 'w', **profile) as dst:
-#     dst.write(baei, 1)
+with rasterio.open('baei.tif', 'w', **profile) as dst:
+    dst.write(baei, 1)
 # with rasterio.open('ndbi.tif', 'w', **profile) as dst:
 #     dst.write(ndbi, 1)
 
@@ -80,6 +80,25 @@ ndvi_filtered = ndvi.copy()
 ndvi_filtered[ndvi > 0.8] = 1
 ndvi_filtered[ndvi <= 0.8] = 0
 
+# Identify water areas where nir < 900
+water = np.zeros_like(nir, dtype=np.float32)
+water[nir < 900] = 1
+water[nir >= 900] = 0
+
+# Read idx_p and idx_p1 rasters
+with rasterio.open('idx_p.tif') as src:
+    idx_p = src.read(1)
+
+with rasterio.open('idx_p1.tif') as src:
+    idx_p1 = src.read(1)
+
+# Create result_buildings raster
+result_buildings = np.zeros_like(nir, dtype=np.float32)
+result_buildings += 1/2  # Initialize all values to 1/2
+result_buildings[np.logical_and.reduce((new_diffs < 1, baei == 1, water != 1, idx_p == 1, idx_p1 == 1))] = 1
+
+
+
 
 # minmax normalize
 with rasterio.open('idx.tif', 'w', **profile) as dst:
@@ -106,4 +125,14 @@ with rasterio.open('ndvi_filtered.tif', 'w', **profile) as dst:
     profile.update(nodata=np.nan)
     dst.write(ndvi_filtered, 1)
 
+with rasterio.open('water.tif', 'w', **profile) as dst:
+    profile.update(count=1)
+    profile.update(dtype=rasterio.float32)
+    profile.update(nodata=np.nan)
+    dst.write(water, 1)
 
+with rasterio.open('result.tif', 'w', **profile) as dst:
+    profile.update(count=1)
+    profile.update(dtype=rasterio.float32)
+    profile.update(nodata=np.nan)
+    dst.write(result_buildings, 1)
