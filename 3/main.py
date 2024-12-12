@@ -31,14 +31,14 @@ nir = bands[7]
 # np.savetxt('ndbi.txt', ndbi, fmt='%.2f')
 
 # BAEI
-# baei = (red + 0.3 ) / (green + nir)
-# baei[(baei == 0) | np.isnan(baei) | np.isinf(baei)] = 0
-# baei = normalize(baei)
+baei = (red + 0.3 ) / (green + nir)
+baei[(baei == 0) | np.isnan(baei) | np.isinf(baei)] = 0
+baei = normalize(baei)
 # np.savetxt('baei.txt', baei, fmt='%.2f')
 
 # load from baei.tif
-with rasterio.open('baei.tif') as src:
-    baei = src.read(1)
+# with rasterio.open('baei.tif') as src:
+#     baei = src.read(1)
 
 profile.update(count=1)
 with rasterio.open('baei.tif', 'w', **profile) as dst:
@@ -95,7 +95,7 @@ with rasterio.open('idx_p1.tif') as src:
 # Create result_buildings raster
 result_buildings = np.zeros_like(nir, dtype=np.float32)
 result_buildings += 1/2  # Initialize all values to 1/2
-result_buildings[np.logical_and.reduce((new_diffs < 1, baei == 1, water != 1, idx_p == 1, idx_p1 == 1))] = 1
+result_buildings[np.logical_and.reduce((new_diffs < 1, baei > 0.355, water != 1, idx_p == 1, idx_p1 == 1))] = 1
 
 
 
