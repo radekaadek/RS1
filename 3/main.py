@@ -1,5 +1,6 @@
 import numpy as np
 import rasterio
+import os
 
 def normalize(band):
     band = (band - band.min()) / (band.max() - band.min())
@@ -36,9 +37,6 @@ baei[(baei == 0) | np.isnan(baei) | np.isinf(baei)] = 0
 baei = normalize(baei)
 # np.savetxt('baei.txt', baei, fmt='%.2f')
 
-# load from baei.tif
-# with rasterio.open('baei.tif') as src:
-#     baei = src.read(1)
 
 profile.update(count=1)
 with rasterio.open('baei.tif', 'w', **profile) as dst:
@@ -94,8 +92,9 @@ with rasterio.open('idx_p1.tif') as src:
 
 # Create result_buildings raster
 result_buildings = np.zeros_like(nir, dtype=np.float32)
-result_buildings += 1/2  # Initialize all values to 1/2
+result_buildings += 0  # Initialize all values to 1/2
 result_buildings[np.logical_and.reduce((new_diffs < 1, baei > 0.355, water != 1, idx_p == 1, idx_p1 == 1))] = 1
+result_buildings[coastal_blue == np.nan] = np.nan
 
 
 
@@ -136,3 +135,11 @@ with rasterio.open('result.tif', 'w', **profile) as dst:
     profile.update(dtype=rasterio.float32)
     profile.update(nodata=np.nan)
     dst.write(result_buildings, 1)
+
+# use gdal_sieve.py to remove small islands
+gdal_command = f"gdal_sieve.py -st 4 result.tif result_sieved.tif"
+os.system(gdal_command)
+
+with rasterio.open('result_sieved.tif') as src:
+    profile = src.profile
+    bands = [src.read(band) for band in range(1, profile['count'] + 1)]
