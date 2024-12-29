@@ -169,3 +169,5 @@ R_2023/
 CIR_2015/
 CIR_2023/
 3/grupa_6.tif
+*.tif
+*.tif.aux.xml
