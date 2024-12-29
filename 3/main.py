@@ -25,12 +25,6 @@ rededge = bands[6]
 nir = bands[7]
 
 
-# ndbi = (nir - red) / (nir + red)
-# ndbi[(ndbi == 0) | np.isnan(ndbi) | np.isinf(ndbi)] = 0
-# ndbi = normalize(ndbi)
-# #save to a file
-# np.savetxt('ndbi.txt', ndbi, fmt='%.2f')
-
 # BAEI
 baei = (red + 0.3 ) / (green + nir)
 baei[(baei == 0) | np.isnan(baei) | np.isinf(baei)] = 0
@@ -44,28 +38,30 @@ with rasterio.open('baei.tif', 'w', **profile) as dst:
 # with rasterio.open('ndbi.tif', 'w', **profile) as dst:
 #     dst.write(ndbi, 1)
 
-band_nums = 8
-road_bands = [[] for _ in range(band_nums)]
-with open('drogi.txt', 'r') as f:
-    lines = f.readlines()
-    for line in lines:
-        band_number = int(line[5])
-        road_bands[band_number - 1].append(float(line.split()[-1]))
-road_bands = np.array(road_bands)
-means = np.array([np.mean(b) for b in road_bands])
-# calculate the difference to the mean
-print(np.shape(bands[0]), np.shape(means))
-# diffs = np.array([np.abs(band - mean) for band, mean in zip(bands, means)])
-diffs = np.zeros((np.shape(bands[0])[0], np.shape(bands[0])[1]))
-for i, band in enumerate(bands):
-    diffs += np.abs(band - means[i])
-diffs_norm = normalize(diffs)
-# set larger than 0.04 to 1
-new_diffs = np.zeros_like(diffs_norm, dtype=np.float32)
-threshold = 0.035
-new_diffs[diffs_norm > threshold] = 1
-# set smaller than 0.04 to 0
-new_diffs[diffs_norm <= threshold] = 1/2
+def calculate_index(bands: list[np.ndarray], filename: str, threshold: float):
+    band_nums = len(bands)
+    index_bands = [[] for _ in range(band_nums)]
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            band_number = int(line[5])
+            index_bands[band_number - 1].append(float(line.split()[-1]))
+    index_bands = np.array(index_bands)
+    means = np.array([np.mean(b) for b in index_bands])
+    # diffs = np.array([np.abs(band - mean) for band, mean in zip(bands, means)])
+    diffs = np.zeros((np.shape(bands[0])[0], np.shape(bands[0])[1]))
+    for i, band in enumerate(bands):
+        diffs += np.abs(band - means[i])
+    diffs_norm = normalize(diffs)
+    # set larger than 0.04 to 1
+    new_diffs = np.zeros_like(diffs_norm, dtype=np.float32)
+    new_diffs[diffs_norm > threshold] = 1
+    # set smaller than 0.04 to 0
+    new_diffs[diffs_norm <= threshold] = 1/2
+    return new_diffs
+
+
+new_diffs = calculate_index(bands, 'drogi.txt', 0.035)
 
 not_zero = (nir + red) != 0
 
@@ -74,12 +70,9 @@ water = np.zeros_like(nir, dtype=np.float32)
 water[nir < 900] = 1
 water[nir >= 900] = 0
 
-# Read idx_p and idx_p1 rasters
-with rasterio.open('idx_p.tif') as src:
-    idx_p = src.read(1)
+idx_p = calculate_index(bands, 'pola.txt', 0.035)
+idx_p1 = calculate_index(bands, 'pola1.txt', 0.035)
 
-with rasterio.open('idx_p1.tif') as src:
-    idx_p1 = src.read(1)
 
 # Create result_buildings raster
 result_buildings = np.zeros_like(nir, dtype=np.float32)
@@ -89,19 +82,12 @@ result_buildings[coastal_blue == np.nan] = np.nan
 
 
 
-
 # minmax normalize
 with rasterio.open('idx.tif', 'w', **profile) as dst:
     profile.update(count=1)
     profile.update(dtype=rasterio.float32)
     profile.update(nodata=np.nan)
     dst.write(new_diffs, 1)
-
-with rasterio.open('diffs.tif', 'w', **profile) as dst:
-    profile.update(count=1)
-    profile.update(dtype=rasterio.float32)
-    profile.update(nodata=np.nan)
-    dst.write(diffs_norm, 1)
 
 with rasterio.open('water.tif', 'w', **profile) as dst:
     profile.update(count=1)
