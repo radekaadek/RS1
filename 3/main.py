@@ -70,8 +70,8 @@ water = np.zeros_like(nir, dtype=np.float32)
 water[nir < 900] = 1
 water[nir >= 900] = 0
 
-idx_p = calculate_index(bands, 'pola.txt', 0.035)
-idx_p1 = calculate_index(bands, 'pola1.txt', 0.035)
+idx_p = calculate_index(bands, 'pola.txt', 0.05)
+idx_p1 = calculate_index(bands, 'pola1.txt', 0.05)
 
 
 # Create result_buildings raster
@@ -80,9 +80,6 @@ result_buildings += 0  # Initialize all values to 1/2
 result_buildings[np.logical_and.reduce((new_diffs < 1, baei > 0.355, water != 1, idx_p == 1, idx_p1 == 1))] = 1
 result_buildings[coastal_blue == np.nan] = np.nan
 
-
-
-# minmax normalize
 with rasterio.open('idx.tif', 'w', **profile) as dst:
     profile.update(count=1)
     profile.update(dtype=rasterio.float32)
@@ -102,7 +99,7 @@ with rasterio.open('result.tif', 'w', **profile) as dst:
     dst.write(result_buildings, 1)
 
 # use gdal_sieve.py to remove small islands
-gdal_command = f"gdal_sieve.py -st 4 result.tif result_sieved.tif"
+gdal_command = f"gdal_sieve -st 4 result.tif result_sieved.tif"
 os.system(gdal_command)
 
 with rasterio.open('result_sieved.tif') as src:
