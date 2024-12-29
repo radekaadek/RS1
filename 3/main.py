@@ -69,15 +69,6 @@ new_diffs[diffs_norm <= threshold] = 1/2
 
 not_zero = (nir + red) != 0
 
-ndvi = np.divide((nir - red), (nir + red), out=np.zeros_like(nir-red), where=not_zero)
-# minmax scale
-ndvi = normalize(ndvi)
-
-# set ndvi > 0.8 to 1
-ndvi_filtered = ndvi.copy()
-ndvi_filtered[ndvi > 0.8] = 1
-ndvi_filtered[ndvi <= 0.8] = 0
-
 # Identify water areas where nir < 900
 water = np.zeros_like(nir, dtype=np.float32)
 water[nir < 900] = 1
@@ -111,18 +102,6 @@ with rasterio.open('diffs.tif', 'w', **profile) as dst:
     profile.update(dtype=rasterio.float32)
     profile.update(nodata=np.nan)
     dst.write(diffs_norm, 1)
-
-with rasterio.open('ndvi.tif', 'w', **profile) as dst:
-    profile.update(count=1)
-    profile.update(dtype=rasterio.float32)
-    profile.update(nodata=np.nan)
-    dst.write(ndvi, 1)
-
-with rasterio.open('ndvi_filtered.tif', 'w', **profile) as dst:
-    profile.update(count=1)
-    profile.update(dtype=rasterio.float32)
-    profile.update(nodata=np.nan)
-    dst.write(ndvi_filtered, 1)
 
 with rasterio.open('water.tif', 'w', **profile) as dst:
     profile.update(count=1)
