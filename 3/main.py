@@ -74,11 +74,22 @@ idx_p = calculate_index(bands, 'pola.txt', 0.05)
 idx_p1 = calculate_index(bands, 'pola1.txt', 0.05)
 
 
+red_index = red / (green + blue)
+
 # Create result_buildings raster
 result_buildings = np.zeros_like(nir, dtype=np.float32)
 result_buildings += 0  # Initialize all values to 1/2
 result_buildings[np.logical_and.reduce((new_diffs < 1, baei > 0.355, water != 1, idx_p == 1, idx_p1 == 1))] = 1
+result_buildings[red_index > 1] = 1
 result_buildings[coastal_blue == np.nan] = np.nan
+
+
+with rasterio.open('red_index.tif', 'w', **profile) as dst:
+    profile.update(count=1)
+    profile.update(dtype=rasterio.float32)
+    profile.update(nodata=np.nan)
+    dst.write(red_index, 1)
+
 
 with rasterio.open('idx.tif', 'w', **profile) as dst:
     profile.update(count=1)
